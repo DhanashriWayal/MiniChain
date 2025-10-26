@@ -4,6 +4,14 @@ from blockchain import MiniChain
 app = Flask(__name__)
 blockchain = MiniChain()
 
+@app.route('/', methods=['GET'])
+def index():
+    return jsonify({'message': 'Welcome to MiniChain! Your blockchain is live.', 'endpoints': {
+        'chain': '/chain (GET)',
+        'transaction': '/transaction (POST)',
+        'mine': '/mine (POST)'
+    }})
+
 @app.route('/mine', methods=['POST'])
 def mine():
     transactions = request.json.get('transactions', [])
