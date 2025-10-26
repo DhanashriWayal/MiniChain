@@ -1,47 +1,37 @@
-from flask import Flask, jsonify, request
+from flask import Flask, render_template, request, jsonify
 from blockchain import MiniChain
+import json
 
 app = Flask(__name__)
 blockchain = MiniChain()
 
-@app.route('/', methods=['GET'])
+# === FRONTEND ===
+@app.route('/')
 def index():
-    return jsonify({'message': 'Welcome to MiniChain! Your blockchain is live.', 'endpoints': {
-        'chain': '/chain (GET)',
-        'transaction': '/transaction (POST)',
-        'mine': '/mine (POST)'
-    }})
+    return render_template('index.html')
 
-@app.route('/mine', methods=['POST'])
-def mine():
-    transactions = request.json.get('transactions', [])
-    block = blockchain.mine_block(transactions)
-    response = {
-        'message': 'New block mined!',
-        'index': block.index,
-        'transactions': block.transactions,
-        'hash': block.hash,
-        'previous_hash': block.previous_hash
-    }
-    return jsonify(response), 201
-
-@app.route('/transaction', methods=['POST'])
-def new_transaction():
-    sender = request.json['sender']
-    receiver = request.json['receiver']
-    amount = request.json['amount']
-    transaction = blockchain.add_transaction(sender, receiver, amount)
-    response = {'message': 'Transaction added to pending', 'transaction': transaction}
-    return jsonify(response), 201
-
-@app.route('/chain', methods=['GET'])
-def full_chain():
-    response = {
+# === API ENDPOINTS ===
+@app.route('/api/chain', methods=['GET'])
+def api_chain():
+    return jsonify({
         'chain': blockchain.to_dict(),
         'length': len(blockchain.chain),
         'valid': blockchain.is_chain_valid()
-    }
-    return jsonify(response), 200
+    })
+
+@app.route('/api/transaction', methods=['POST'])
+def api_transaction():
+    data = request.json
+    tx = blockchain.add_transaction(data['sender'], data['receiver'], data['amount'])
+    return jsonify({'message': 'Transaction added!', 'tx': tx}), 201
+
+@app.route('/api/mine', methods=['POST'])
+def api_mine():
+    block = blockchain.mine_block([])
+    return jsonify({
+        'message': 'Block mined!',
+        'block': vars(block)
+    }), 201
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
